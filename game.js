@@ -285,6 +285,7 @@ Game.prototype.Calculate = function () {
             sounds.roar.play()
             deathTime = new Date
             if (lifes == 0) {
+                gameElapsed = 0
                 // document.getElementById('twitterIframe').style.display = 'block'
                 // document.getElementById('twitterIframe').src = 'https://platform.twitter.com/widgets/tweet_button.html?size=large&text=My BearIT score is ' + Math.floor(gameElapsed) + ' %23geekparty'
             }
