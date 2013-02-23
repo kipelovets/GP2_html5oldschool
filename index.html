@@ -24,11 +24,19 @@
         margin-top: 0px;
         margin-bottom: 0px;
     }
+    #twitterIframe {
+      position:absolute;
+      left: 200px;
+      top:100px;
+    }
 
   </style>
 </head>
 <body>
   <canvas id="screen" width="960" height="640"></canvas>
   <div id="fpscontainer"></div>
+<iframe style="display:none" id="twitterIframe" allowtransparency="true" frameborder="0" scrolling="no"
+        src="https://platform.twitter.com/widgets/tweet_button.html?size=large&text=My BearIT score is %23geekparty"
+        style="width:130px; height:20px;"></iframe>
 </body>
 </html>

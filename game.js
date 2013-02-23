@@ -5,7 +5,7 @@
 // Parameters
 var screenHeight      = 640,
     screenWidth       = 960,
-    carsPerSecond     = 0.3,
+    carsPerSecond     = 0.4,
     carSpaceThreshold = 1.0,
     carsThreshold     = 0.5,
     roadWidth         = 200,
@@ -13,6 +13,7 @@ var screenHeight      = 640,
     roads             = 4,
     // Car
     carHeight         = 189,
+    bearHeight        = 200,
 
     stage = 0
     ;
@@ -68,7 +69,7 @@ var Bear = function () {
         ]})
 
     var x = 0, 
-        y = 300, 
+        y = 340, 
         face = -1,  // -1 - left, 1 - right
         dx = 0, 
         sprite = this.spriteLeft, 
@@ -97,8 +98,8 @@ var Bear = function () {
     }
 
     this.update = function (tickperframe) {
+        sprite.update(tickperframe)
         if (walking) {
-            sprite.update(tickperframe)
             var walkTime = 0.3, 
                 walkSpeed = roadWidth / walkTime
             dx += walkSpeed * tickperframe / 1000
@@ -111,7 +112,11 @@ var Bear = function () {
     }
 
     this.collide = function (car) {
-        return car.getX() == x && (car.y + carHeight >= y)
+        return car.getX() == x && (car.y + carHeight >= y + 100) && (car.y < y + bearHeight)
+    }
+
+    this.near = function (car) {
+        return (Math.abs(car.getX() - x) == 1) && (car.y + carHeight >= y + 100) && (car.y < y + bearHeight)
     }
 }
 
@@ -133,7 +138,7 @@ var Car = function () {
 
     this.x = 80 + 200 * Math.floor(Math.random() * 3)
     this.y = - carHeight
-    this.speed = 100
+    this.speed = 200 * (1 + gameElapsed / 100) + Math.floor(Math.random() * 150 * (1 + gameElapsed / 180))
 
     this.isOut = false
 
@@ -158,11 +163,12 @@ var Car = function () {
     }
 }
 
-var sounds = {};
-var bear = new Bear();
-var cars = [];
-var bg;
-var bgPos = 0,
+var sounds = {},
+    bear = new Bear(),
+    cars = [],
+    bg,
+    logo,
+    bgPos = 0,
     lifeImage,
     startTime = new Date
     ;
@@ -178,6 +184,13 @@ Game.prototype.Load = function () {
 
     lifeImage = new Image()
     lifeImage.src = 'res/gfx/heart.png'
+
+    logo = new Image()
+    logo.src = 'res/gfx/logo.jpg'
+
+    sounds.roar = new buzz.sound('res/snd/roar.mp3')
+    sounds.horn = new buzz.sound('res/snd/horn.mp3')
+    sounds.car = new buzz.sound('res/snd/car.mp3')
 
     // // load sound
     // this.SoundJump = new buzz.sound("res/jump.ogg");
@@ -199,24 +212,27 @@ Game.prototype.Load = function () {
 
 var carsElapsed = 0,
     lifes = 3,
-    pause = false
+    pause = false,
+    gameElapsed = 0
     ;
 
 Game.prototype.Calculate = function () {
-    if (lifes <= 0 || pause) {
+    if (lifes <= 0 || pause || stage != 1) {
         return
     }
 
-    bgPos = (bgPos + tickperframe / 5) % screenHeight
+    gameElapsed += secperframe
+
+    bgPos = (bgPos + tickperframe / 12) % screenHeight
     bear.update(tickperframe)
 
     // Cars
     carsElapsed += secperframe
-    var dice = Math.random() * carsElapsed * carsPerSecond
+    var dice = Math.random() * carsElapsed * carsPerSecond * (1 + gameElapsed / 180)
     if (dice > carsThreshold) {
         carsElapsed = 0
         var spaces = [], i, count = 0
-        for (i = offroadWidth; i < screenWidth; i += roadWidth) {
+        for (i = offroadWidth; i < screenWidth - offroadWidth; i += roadWidth) {
             spaces[count++] = true
         }
         for (i in cars) {
@@ -230,6 +246,11 @@ Game.prototype.Calculate = function () {
                 cars.push(car)
                 break
             }
+        }
+
+        if (Math.random() > 0.9 && sounds.cat.isPaused()) {
+            sounds.car.stop()
+            sounds.car.play()
         }
     }
 
@@ -249,7 +270,17 @@ Game.prototype.Calculate = function () {
         if (bear.collide(cars[i])) {
             lifes--
             cars.splice(i, 1)
+            sounds.roar.stop()
+            sounds.roar.play()
+            if (lifes == 0) {
+                document.getElementById('twitterIframe').style.display = 'block'
+                document.getElementById('twitterIframe').src = 'https://platform.twitter.com/widgets/tweet_button.html?size=large&text=My BearIT score is ' + Math.floor(gameElapsed) + ' %23geekparty'
+            }
             break
+        }
+        if (bear.near(cars[i]) && Math.random() > 0.1 && sounds.horn.isPaused()) {
+            sounds.horn.stop()
+            sounds.horn.play()
         }
         i++
     }
@@ -258,29 +289,40 @@ Game.prototype.Calculate = function () {
 var x = 0;
 
 Game.prototype.Render = function () {
-    ctx.font = "20px Georgia"
-    if (lifes <= 0) {
-        ctx.fillText("Game Over",450,300)
-        return
-    }
 
     ctx.drawImage(bg, 0, 0, bg.width, bg.height, 0, bgPos, bg.width, bg.height)
     if (bgPos > 0) {
         ctx.drawImage(bg, 0, 0, bg.width, bg.height, 0, bgPos - bg.height, bg.width, bg.height)
     }
 
-    bear.draw()
+    if (stage == 0) {
+        ctx.drawImage(logo, 0, 0, logo.width, logo.height, 0, 0, logo.width, logo.height)
+        return
+    }
+
+    if (lifes <= 0) {
+        ctx.font = "100px Georgia"
+        ctx.fillStyle = '#ff0000'
+        ctx.fillText("Game Over", 200, 300)
+
+        ctx.font = "80px Georgia"
+        ctx.fillText(Math.floor(gameElapsed), 200, 500)
+        return
+    }
 
     var i
     for (i in cars) {
         cars[i].draw()
     }
 
+    bear.draw()
+
     for (i = 0; i < lifes; i++) {
-        ctx.drawImage(lifeImage, 0, 0, lifeImage.width, lifeImage.height, 932, 264 + i*44, lifeImage.width, lifeImage.height)
+        ctx.drawImage(lifeImage, 0, 0, lifeImage.width, lifeImage.height, 915, 264 + i*44, lifeImage.width, lifeImage.height)
     }
 
-    ctx.fillText(Math.floor((new Date - startTime) / 1000), 5, 620)
+    ctx.font = "20px Georgia"
+    ctx.fillText(Math.floor(gameElapsed), 5, 620)
 }
 
 //---------------------------------------------
@@ -295,6 +337,23 @@ Game.prototype.onmousedown = function (e) {
     // play sound
     // this.SoundJump.stop();
     // this.SoundJump.play();
+    
+    if (stage == 0) {
+        stage = 1
+        return
+    }
+
+    if (lifes == 0) {
+        document.getElementById('twitterIframe').style.display = 'none'
+        lifes = 3
+        return
+    }
+
+    if (e.clientX < (canvas.offsetLeft + canvas.width / 2)) {
+        bear.moveLeft()
+    } else {
+        bear.moveRight()
+    }
 
 }
 Game.prototype.onmousemove = function (e) {
@@ -307,9 +366,17 @@ Game.prototype.onmouseup = function (e) {
 
 Game.prototype.onkeydown = function (e) {
 
-    // e.whitch contains charcode of pressed key
+    if (stage == 0) {
+        stage = 1
+        return
+    }
 
-    // left
+    if (lifes == 0) {
+        document.getElementById('twitterIframe').style.display = 'none'
+        lifes = 3
+        return
+    }
+
     switch (e.which) {
         case 37: //left
             bear.moveLeft()
@@ -323,6 +390,7 @@ Game.prototype.onkeydown = function (e) {
         case 32: // space
             pause = !pause
     }
+
     // this.SoundJump.stop();
     // this.SoundJump.play();
 }
