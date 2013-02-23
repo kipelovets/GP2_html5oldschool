@@ -138,7 +138,7 @@ var Car = function () {
 
     this.x = 80 + 200 * Math.floor(Math.random() * 3)
     this.y = - carHeight
-    this.speed = 200 * (1 + gameElapsed / 100) + Math.floor(Math.random() * 150 * (1 + gameElapsed / 180))
+    this.speed = 250 * (1 + gameElapsed / 100) + Math.floor(Math.random() * 150 * (1 + gameElapsed / 180))
 
     this.isOut = false
 
@@ -167,6 +167,7 @@ var sounds = {},
     bear = new Bear(),
     cars = [],
     bg,
+    go,
     logo,
     bgPos = 0,
     lifeImage,
@@ -188,9 +189,18 @@ Game.prototype.Load = function () {
     logo = new Image()
     logo.src = 'res/gfx/logo.jpg'
 
+    go = new Image()
+    go.src = 'res/gfx/game_over.png'
+
     sounds.roar = new buzz.sound('res/snd/roar.mp3')
     sounds.horn = new buzz.sound('res/snd/horn.mp3')
     sounds.car = new buzz.sound('res/snd/car.mp3')
+    sounds.music = new buzz.sound('res/snd/music.mp3')
+
+    sounds.horn.setVolume(60)
+
+    sounds.music.setVolume(70)
+    sounds.music.loop().play()
 
     // // load sound
     // this.SoundJump = new buzz.sound("res/jump.ogg");
@@ -213,7 +223,8 @@ Game.prototype.Load = function () {
 var carsElapsed = 0,
     lifes = 3,
     pause = false,
-    gameElapsed = 0
+    gameElapsed = 0,
+    deathTime = false
     ;
 
 Game.prototype.Calculate = function () {
@@ -272,13 +283,14 @@ Game.prototype.Calculate = function () {
             cars.splice(i, 1)
             sounds.roar.stop()
             sounds.roar.play()
+            deathTime = new Date
             if (lifes == 0) {
-                document.getElementById('twitterIframe').style.display = 'block'
-                document.getElementById('twitterIframe').src = 'https://platform.twitter.com/widgets/tweet_button.html?size=large&text=My BearIT score is ' + Math.floor(gameElapsed) + ' %23geekparty'
+                // document.getElementById('twitterIframe').style.display = 'block'
+                // document.getElementById('twitterIframe').src = 'https://platform.twitter.com/widgets/tweet_button.html?size=large&text=My BearIT score is ' + Math.floor(gameElapsed) + ' %23geekparty'
             }
             break
         }
-        if (bear.near(cars[i]) && Math.random() > 0.1 && sounds.horn.isPaused()) {
+        if (bear.near(cars[i]) && Math.random() > 0.8 && sounds.horn.isPaused()) {
             sounds.horn.stop()
             sounds.horn.play()
         }
@@ -290,6 +302,7 @@ var x = 0;
 
 Game.prototype.Render = function () {
 
+    ctx.shadowBlur = 0; // integer
     ctx.drawImage(bg, 0, 0, bg.width, bg.height, 0, bgPos, bg.width, bg.height)
     if (bgPos > 0) {
         ctx.drawImage(bg, 0, 0, bg.width, bg.height, 0, bgPos - bg.height, bg.width, bg.height)
@@ -301,12 +314,21 @@ Game.prototype.Render = function () {
     }
 
     if (lifes <= 0) {
-        ctx.font = "100px Georgia"
-        ctx.fillStyle = '#ff0000'
-        ctx.fillText("Game Over", 200, 300)
+        ctx.drawImage(go, 0, 0, go.width, go.height, 0, 0, go.width, go.height)
 
-        ctx.font = "80px Georgia"
-        ctx.fillText(Math.floor(gameElapsed), 200, 500)
+        // ctx.font = "100px Georgia"
+        // ctx.fillStyle = '#ff0000'
+        // ctx.fillText("Game Over", 200, 300)
+
+        ctx.shadowColor = '#FFFF03'
+        ctx.shadowOffsetX = 0; // integer
+        ctx.shadowOffsetY = 0; // integer
+        ctx.shadowBlur = 10; // integer
+        ctx.fillStyle = '#000000'
+        ctx.font = "100px Georgia"
+        ctx.fillText("Score: " + Math.floor(gameElapsed), 450, 500)
+
+        ctx.shadowBlur = 0; // integer
         return
     }
 
@@ -321,8 +343,27 @@ Game.prototype.Render = function () {
         ctx.drawImage(lifeImage, 0, 0, lifeImage.width, lifeImage.height, 915, 264 + i*44, lifeImage.width, lifeImage.height)
     }
 
+    ctx.shadowColor = '#FFFF03'
+    ctx.shadowOffsetX = 0; // integer
+    ctx.shadowOffsetY = 0; // integer
+    ctx.shadowBlur = 3; // integer
+    ctx.fillStyle = '#000000'
+
     ctx.font = "20px Georgia"
-    ctx.fillText(Math.floor(gameElapsed), 5, 620)
+    ctx.fillText("Score: " + Math.floor(gameElapsed), 5, 620)
+
+    if (deathTime !== false) {
+        ctx.beginPath()
+        ctx.globalAlpha = 0.5
+        ctx.rect(0, 0, 960, 640)
+        ctx.fillStyle = '#ff0000'
+        ctx.fill()
+        ctx.shadowBlur = 0; // integer
+        ctx.globalAlpha = 1
+        if ((new Date- deathTime) / 1000 > 0.3) {
+            deathTime = false
+        }
+    }
 }
 
 //---------------------------------------------
@@ -344,7 +385,7 @@ Game.prototype.onmousedown = function (e) {
     }
 
     if (lifes == 0) {
-        document.getElementById('twitterIframe').style.display = 'none'
+        // document.getElementById('twitterIframe').style.display = 'none'
         lifes = 3
         return
     }
@@ -372,7 +413,7 @@ Game.prototype.onkeydown = function (e) {
     }
 
     if (lifes == 0) {
-        document.getElementById('twitterIframe').style.display = 'none'
+        // document.getElementById('twitterIframe').style.display = 'none'
         lifes = 3
         return
     }

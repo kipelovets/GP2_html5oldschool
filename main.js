@@ -41,10 +41,10 @@ function GameTick(elapsed)
     game.Render();
 
     // Draw FPS
-	ctx.fillStyle = "#FF00AA";    
-    ctx.font="15px Arial Black";
-    ctx.fillText("FPS: "+ fps.str_fps,20,20);
-    ctx.fillText("W: "+ canvas.width + " H: "+canvas.height,20,40);
+	// ctx.fillStyle = "#FF00AA";    
+    // ctx.font="15px Arial Black";
+    // ctx.fillText("FPS: "+ fps.str_fps,20,20);
+    // ctx.fillText("W: "+ canvas.width + " H: "+canvas.height,20,40);
 
  
 }
